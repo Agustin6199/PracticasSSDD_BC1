@@ -9,10 +9,9 @@ import Download
 
 class Client(Ice.Application):
     def run(self, argv):
-	
-	if(len(argv) != 3)
-		print("Error en la línea de comandos. El formato es: ./client.py <proxy> <url>")
-		return -1
+        if(len(argv) != 3):
+                print("Error en la línea de comandos. El formato es: ./client.py <proxy> <url>")
+                return -1
 
         proxy = self.communicator().stringToProxy(argv[1])
         intermediary = Download.IntermediaryPrx.checkedCast(proxy)
@@ -21,7 +20,7 @@ class Client(Ice.Application):
             raise RuntimeError('Invalid proxy')
 
         msgBack = intermediary.downloadTask(argv[2])
-	print(msgBack)
+        print(msgBack)
 	
         return 0
 

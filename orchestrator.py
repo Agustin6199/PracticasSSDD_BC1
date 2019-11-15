@@ -8,8 +8,8 @@ import Download
 
 class Intermediary(Download.Intermediary):
     def downloadTask(self, url, current=None):
-	print(url)
-	return "Tarea enviada"
+        print(url)
+        return "Tarea enviada"
 
 
 class Server(Ice.Application):

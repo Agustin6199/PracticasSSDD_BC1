@@ -9,16 +9,9 @@ import Download
 class Intermediary(Download.Intermediary):
     def downloadTask(self, url, current=None):
         
-        proxyServer = Ice.Application.communicator().stringToProxy(sys.argv[1])
-        downloader = Download.DownloaderPrx.checkedCast(proxyServer)
+         
         
-        if not downloader:
-            raise RuntimeError('Invalid proxy')
-
-        msgBack = downloader.addDownloadTask(url)
-        print(msgBack, url)
-
-        return "Tarea enviada correctamente"
+        return "Tarea enviada"
 
 
 class Server(Ice.Application):
@@ -27,7 +20,7 @@ class Server(Ice.Application):
         if(len(sys.argv) != 2):
             print("Error en la línea de comandos. El formato es: ./orchestrator.py --Ice.Config=Orchestrator.config <proxyServer>")
             return -1
-
+	
         broker = self.communicator()
         servant = Intermediary()
 
@@ -35,7 +28,14 @@ class Server(Ice.Application):
         proxy = adapter.add(servant, broker.stringToIdentity("intermediary1"))
 
         print(proxy, flush=True)
+        proxyServer = self.communicator().stringToProxy(sys.argv[1])
+        downloader = Download.DownloaderPrx.checkedCast(proxyServer)
         
+        if not downloader:
+            raise RuntimeError('Invalid proxy')
+        msgBack = downloader.addDownloadTask(url)
+        print(msgBack)
+
         adapter.activate()
         self.shutdownOnInterrupt()
         broker.waitForShutdown()

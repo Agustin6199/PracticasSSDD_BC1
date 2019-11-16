@@ -6,10 +6,10 @@ import Ice
 Ice.loadSlice('TaskManager.ice')
 import Download
 
-class Downloader(Download.Downloader):
+class Downloader(Download.Downloader)
     def addDownloadTask(self, url, current=None):
         print(url)
-        return "Tarea descargada: "
+        return "Tarea descargada"
         
         
 class Server(Ice.Application):

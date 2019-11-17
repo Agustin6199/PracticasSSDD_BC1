@@ -3,8 +3,8 @@
 
 import sys
 import Ice
-Ice.loadSlice('TaskManager.ice')
-import Download
+Ice.loadSlice('trawlnet.ice')
+import TrawlNet
 
 
 class Client(Ice.Application):
@@ -14,12 +14,12 @@ class Client(Ice.Application):
                 return -1
 
         proxy = self.communicator().stringToProxy(argv[1])
-        intermediary = Download.IntermediaryPrx.checkedCast(proxy)
+        orchestrator = TrawlNet.OrchestratorPrx.checkedCast(proxy)
 
-        if not intermediary:
+        if not orchestrator:
             raise RuntimeError('Invalid proxy')
 
-        msgBack = intermediary.downloadTask(argv[2])
+        msgBack = orchestrator.downloadTask(argv[2])
         print(msgBack)
 	
         return 0

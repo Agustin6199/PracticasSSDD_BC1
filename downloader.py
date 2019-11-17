@@ -3,13 +3,13 @@
 
 import sys
 import Ice
-Ice.loadSlice('TaskManager.ice')
-import Download
+Ice.loadSlice('trawlnet.ice')
+import TrawlNet
 
-class Downloader(Download.Downloader):
+class Downloader(TrawlNet.Downloader):
     def addDownloadTask(self, url, current=None):
-        print(url)
-        return "Tarea descargada: "
+        print("Tarea descargada:", url)
+        return "Tarea enviada a Downloader correctamente: "
         
         
 class Server(Ice.Application):

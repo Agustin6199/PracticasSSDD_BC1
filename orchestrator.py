@@ -15,10 +15,10 @@ class Orchestrator(TrawlNet.Orchestrator):
         if not downloader:
             raise RuntimeError('Invalid proxy')
 
-        msgBack = downloader.addDownloadTask(url)
-        print(msgBack, url)
+        print("Mandando tarea a un proceso Downloader...")
+        downloader.addDownloadTask(url)
 
-        return "Tarea enviada correctamente"
+        return "Descarga realizada correctamente."
 
 
 class Server(Ice.Application):

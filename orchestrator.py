@@ -15,9 +15,9 @@ class Orchestrator(TrawlNet.Orchestrator):
         if not downloader:
             raise RuntimeError('Invalid proxy')
 
-        print("Mandando tarea a un proceso Downloader...")
+        print("Descargando...")
         downloader.addDownloadTask(url)
-
+        print("Descarga realizada con éxito.")
         return "Descarga realizada correctamente."
 
 

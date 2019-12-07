@@ -46,17 +46,23 @@ def download_mp3(url, destination='./'):
     options['outtmpl'] = os.path.join(destination, '%(title)s.%(ext)s')
     with youtube_dl.YoutubeDL(options) as youtube:
         youtube.download([url])
+        meta = youtube.extract_info(url, download=False)
     filename = task_status['filename']
     # BUG: filename extension is wrong, it must be mp3
     filename = filename[:filename.rindex('.') + 1]
-    return filename + options['postprocessors'][0]['preferredcodec']
+ 
+    return filename, meta['id']
 
 
 class Downloader(TrawlNet.Downloader):
     def addDownloadTask(self, url, current=None):
         print("Descargando tarea:", url)
-        download_mp3(url)
-        return "Tarea realizada por el Downloader correctamente"
+        fileName, fileId = download_mp3(url)
+        ##print("Nombre: " + fileName[2:len(fileName)-1] + "  ID: " + fileId)
+        fileinfo = TrawlNet.FileInfo()
+        fileinfo.name = fileName[2:len(fileName)-1]
+        fileinfo.hash = fileId
+        return fileinfo
         
         
 class Server(Ice.Application):

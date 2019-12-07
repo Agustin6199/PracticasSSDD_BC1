@@ -7,6 +7,9 @@ Ice.loadSlice('trawlnet.ice')
 import TrawlNet
 
 class Orchestrator(TrawlNet.Orchestrator):
+
+    
+
     def downloadTask(self, url, current=None):
         
         proxyServer = Ice.Application.communicator().stringToProxy(sys.argv[1])
@@ -16,9 +19,10 @@ class Orchestrator(TrawlNet.Orchestrator):
             raise RuntimeError('Invalid proxy')
 
         print("Descargando...")
-        downloader.addDownloadTask(url)
+        fileinfo = downloader.addDownloadTask(url)
         print("Descarga realizada con éxito.")
-        return "Descarga realizada correctamente."
+
+        return fileinfo
 
 
 class Server(Ice.Application):

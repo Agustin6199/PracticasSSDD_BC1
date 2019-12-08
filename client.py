@@ -9,7 +9,7 @@ import TrawlNet
 
 class Client(Ice.Application):
     def run(self, argv):
-        if(len(argv) != 3 or len(argv) != 2):
+        if(len(argv) != 3 and len(argv) != 2):
                 print("Error en la línea de comandos. El formato es: ./client.py <proxy> <url> ó ./client.py <proxy> ")
                 return -1
 
@@ -19,12 +19,20 @@ class Client(Ice.Application):
         if not orchestrator:
             raise RuntimeError('Invalid proxy')
 
-        if(len(argv) = 3):
+        if(len(argv) == 3):
             fileInfoBack = orchestrator.downloadTask(argv[2])
-            print("Name: "+ fileInfoBack.name + "   ID: " + fileInfoBack.hash)
-	else:
-            fileList = orchestrator.getFileList()
-            ##MOSTRAR FILELIST
+            if(fileInfoBack.name=='Error'):
+                raise TrawlNet.DownloadError("URL no válida")
+            else:
+                print("Name: "+ fileInfoBack.name + "   ID: " + fileInfoBack.hash)
+        else:
+            files = orchestrator.getFileList()
+            if(len(files)==0):
+                print("No hay archivos descargados.")
+            else:
+                print("Lista de archivos:")
+                for file in files:
+                    print("Name: "+ file.name + "   ID: " + file.hash)
 
         return 0
 

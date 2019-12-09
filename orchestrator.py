@@ -36,8 +36,6 @@ _YOUTUBEDL_OPTS_ = {
 
 class Orchestrator(TrawlNet.Orchestrator):
 
-    serverMaster = None
-
     def __init__(self, server):
         self.serverMaster = server
     
@@ -51,11 +49,9 @@ class Orchestrator(TrawlNet.Orchestrator):
 
         try:
             inFiles, idFile = self.serverMaster.checkFile(url)
-        except:
-            fileinfo = TrawlNet.FileInfo()
-            fileinfo.name = 'Error'
-            fileinfo.hash = '-1'
-            return fileinfo
+        except Exception:
+            print("Se ha producido un error en la descarga: ", url)
+            raise TrawlNet.DownloadError("URL no válida")
             
         if(inFiles):
             print("Descargando...")
@@ -67,12 +63,17 @@ class Orchestrator(TrawlNet.Orchestrator):
             fileinfo = TrawlNet.FileInfo()
             fileinfo.hash = idFile
             fileinfo.name = self.serverMaster.files[idFile]
-
         return fileinfo
 
     def getFileList(self, current=None):
         fileList = self.serverMaster.getFiles()
-        return fileList
+        retVal=[]
+        for hash, name in fileList.items():
+            file=TrawlNet.FileInfo()
+            file.hash = hash
+            file.name = name
+            retVal.append(file)
+        return retVal
 
 
 ##class filesUpdatesEventI(TrawlNet.UpdateEvent):
@@ -90,7 +91,7 @@ class Server(Ice.Application):
         broker = self.communicator()
         servant = Orchestrator(self)
 
-        adapter = broker.createObjectAdapter("OrchestratorAdapter")
+        adapter = broker.createObjectAdapter("ServerAdapter")
         proxy = adapter.add(servant, broker.stringToIdentity("orchestrator1"))
 
         print(proxy, flush=True)

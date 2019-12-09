@@ -19,12 +19,12 @@ class Client(Ice.Application):
         if not orchestrator:
             raise RuntimeError('Invalid proxy')
 
-        if(len(argv) == 3):
-            fileInfoBack = orchestrator.downloadTask(argv[2])
-            if(fileInfoBack.name=='Error'):
-                raise TrawlNet.DownloadError("URL no válida")
-            else:
+        if(len(argv[2]) > 0):
+            try:
+                fileInfoBack = orchestrator.downloadTask(argv[2])
                 print("Name: "+ fileInfoBack.name + "   ID: " + fileInfoBack.hash)
+            except TrawlNet.DownloadError as e:
+                print(e.reason)
         else:
             files = orchestrator.getFileList()
             if(len(files)==0):

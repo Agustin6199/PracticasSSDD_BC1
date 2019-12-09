@@ -70,7 +70,7 @@ class Server(Ice.Application):
         broker = self.communicator()
         servant = Downloader()
         
-        adapter = broker.createObjectAdapter("DownloaderAdapter")
+        adapter = broker.createObjectAdapter("ServerAdapter")
         proxy = adapter.add(servant, broker.stringToIdentity("downloader1"))
         
         print(proxy, flush=True)

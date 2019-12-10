@@ -5,6 +5,8 @@ import sys
 import Ice
 Ice.loadSlice('trawlnet.ice')
 import TrawlNet
+import IceStorm
+
 try:
     import youtube_dl
 except ImportError:
@@ -32,6 +34,16 @@ _YOUTUBEDL_OPTS_ = {
     }],
     'logger': NullLogger()
 }
+
+class OrchestratorEvent(TrawlNet.OrchestratorEvent):
+
+    def __init__(self, server):
+        self.serverMaster = server
+
+    def hello(self, prx, current=None):
+        print("Hola holita vecinito")
+        
+        
 
 
 class Orchestrator(TrawlNet.Orchestrator):
@@ -83,6 +95,16 @@ class Server(Ice.Application):
 
     files = {}
 
+    def get_topic_manager(self):
+        key = 'IceStorm.TopicManager.Proxy'
+        pr = self.communicator().propertyToProxy(key)
+        if pr is None:
+            print("property {} not set".format(key))
+            return None
+
+        print("Using IceStorm in: '%s'" % key)
+        return IceStorm.TopicManagerPrx.checkedCast(pr)
+
     def run(self, argv):
         if(len(sys.argv) != 2):
             print("Error en la línea de comandos. El formato es: ./orchestrator.py --Ice.Config=Orchestrator.config <proxyServer>")
@@ -96,9 +118,43 @@ class Server(Ice.Application):
 
         print(proxy, flush=True)
         
+        #####
+        
+        topic_mgr = self.get_topic_manager()
+        if not topic_mgr:
+            print('Invalid proxy')
+            return 2
+
+        ###SUBSCRIBER###
+        helloServant = OrchestratorEvent(self)
+        subscriber = adapter.addWithUUID(helloServant)
+
+        topic_name = "OrchestratorEvent"
+        qos = {}
+        try:
+            topic = topic_mgr.retrieve(topic_name)
+        except IceStorm.NoSuchTopic:
+            topic = topic_mgr.create(topic_name)
+
+        topic.subscribeAndGetPublisher(qos, subscriber)
+        print("Waiting events... '{}'".format(subscriber))
+	
         adapter.activate()
+
+        ###PUBLISHER###
+        
+        publisher = topic.getPublisher()
+        orch = TrawlNet.OrchestratorEventPrx.uncheckedCast(publisher)
+        
+        orch.hello(TrawlNet.OrchestratorPrx.checkedCast(subscriber))
+
+        #####
+
+
         self.shutdownOnInterrupt()
         broker.waitForShutdown()
+
+        topic.unsubscribe(subscriber)
 
         return 0
 

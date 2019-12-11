@@ -36,15 +36,17 @@ _YOUTUBEDL_OPTS_ = {
 }
 
 class OrchestratorEvent(TrawlNet.OrchestratorEvent):
-
-    def __init__(self, server):
+    
+    def __init__(self, server, orch):
         self.serverMaster = server
+        self.orchestrator = orch
 
     def hello(self, prx, current=None):
-        print("Hola holita vecinito")
+        if prx!=self.orchestrator:
+            print("New Orchestrator: ", prx)
+            self.serverMaster.orchList.append(prx)
+            prx.announce(TrawlNet.OrchestratorPrx.checkedCast(self.orchestrator))
         
-        
-
 
 class Orchestrator(TrawlNet.Orchestrator):
 
@@ -78,7 +80,7 @@ class Orchestrator(TrawlNet.Orchestrator):
         return fileinfo
 
     def getFileList(self, current=None):
-        fileList = self.serverMaster.getFiles()
+        fileList = self.serverMaster.files
         retVal=[]
         for hash, name in fileList.items():
             file=TrawlNet.FileInfo()
@@ -87,6 +89,10 @@ class Orchestrator(TrawlNet.Orchestrator):
             retVal.append(file)
         return retVal
 
+    def announce(self, prx, current=None):
+        self.serverMaster.orchList.append(prx)
+        print('Previous Orchestrator: ', prx)
+        
 
 ##class filesUpdatesEventI(TrawlNet.UpdateEvent):
     
@@ -94,6 +100,7 @@ class Orchestrator(TrawlNet.Orchestrator):
 class Server(Ice.Application):
 
     files = {}
+    orchList = []
 
     def get_topic_manager(self):
         key = 'IceStorm.TopicManager.Proxy'
@@ -116,6 +123,7 @@ class Server(Ice.Application):
         adapter = broker.createObjectAdapter("ServerAdapter")
         proxy = adapter.add(servant, broker.stringToIdentity("orchestrator1"))
 
+        self.orchList.append(proxy)
         print(proxy, flush=True)
         
         #####
@@ -126,7 +134,7 @@ class Server(Ice.Application):
             return 2
 
         ###SUBSCRIBER###
-        helloServant = OrchestratorEvent(self)
+        helloServant = OrchestratorEvent(self, proxy)
         subscriber = adapter.addWithUUID(helloServant)
 
         topic_name = "OrchestratorEvent"
@@ -146,7 +154,7 @@ class Server(Ice.Application):
         publisher = topic.getPublisher()
         orch = TrawlNet.OrchestratorEventPrx.uncheckedCast(publisher)
         
-        orch.hello(TrawlNet.OrchestratorPrx.checkedCast(subscriber))
+        orch.hello(TrawlNet.OrchestratorPrx.checkedCast(proxy))
 
         #####
 
@@ -170,9 +178,6 @@ class Server(Ice.Application):
         
         return False, meta['id']
         
-    def getFiles(self):
-        return self.files
-       
             
 server = Server()
 sys.exit(server.main(sys.argv))

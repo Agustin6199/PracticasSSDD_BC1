@@ -46,7 +46,19 @@ class OrchestratorEvent(TrawlNet.OrchestratorEvent):
             print("New Orchestrator: ", prx)
             self.serverMaster.orchList.append(prx)
             prx.announce(TrawlNet.OrchestratorPrx.checkedCast(self.orchestrator))
+
+
+class UpdateEvent(TrawlNet.UpdateEvent):   
+    
+    def __init__(self, server):
+        self.serverMaster = server
         
+    def newFile(self, nfile, current=None):
+        if self.serverMaster:
+            if nfile.hash not in self.serverMaster.files:
+                print("Añadido a la lista de ficheros el archivo descargado por otro orchestrator: " + nfile.name)
+                self.serverMaster.files[nfile.hash] = nfile.name
+
 
 class Orchestrator(TrawlNet.Orchestrator):
 
@@ -94,9 +106,6 @@ class Orchestrator(TrawlNet.Orchestrator):
         print('Previous Orchestrator: ', prx)
         
 
-##class filesUpdatesEventI(TrawlNet.UpdateEvent):
-    
-    
 class Server(Ice.Application):
 
     files = {}
@@ -133,11 +142,11 @@ class Server(Ice.Application):
             print('Invalid proxy')
             return 2
 
-        ###SUBSCRIBER###
+        ###SUBSCRIBER SYNC###
         helloServant = OrchestratorEvent(self, proxy)
         subscriber = adapter.addWithUUID(helloServant)
 
-        topic_name = "OrchestratorEvent"
+        topic_name = "OrchestratorSync"
         qos = {}
         try:
             topic = topic_mgr.retrieve(topic_name)
@@ -147,18 +156,40 @@ class Server(Ice.Application):
         topic.subscribeAndGetPublisher(qos, subscriber)
         print("Waiting events... '{}'".format(subscriber))
 	
-        adapter.activate()
+        ##adapter.activate()
 
-        ###PUBLISHER###
+        ###PUBLISHER SYNC###
         
         publisher = topic.getPublisher()
         orch = TrawlNet.OrchestratorEventPrx.uncheckedCast(publisher)
         
         orch.hello(TrawlNet.OrchestratorPrx.checkedCast(proxy))
-
+        
+        
+        ###SUBSCRIBER UPDATEFILE###
+        
+        updatefileServant = UpdateEvent(self)
+        subscriberUpdate = adapter.addWithUUID(updatefileServant)
+        
+        topic_nameUpdate = "UpdateEvents"
+        qosUpdate = {}
+        try:
+            topicUpdate = topic_mgr.retrieve(topic_nameUpdate)
+        except IceStorm.NoSuchTopic:
+            topicUpdate = topic_mgr.create(topic_nameUpdate)
+            
+        topicUpdate.subscribeAndGetPublisher(qosUpdate, subscriberUpdate)
+        print("Waiting events2... '{}'".format(subscriberUpdate))
+        
+        adapter.activate()
+        
+        ###PUBLISHER UPDATEFILE###
+        
+        publisherUpdate = topicUpdate.getPublisher()
+        self.orchUpdate = TrawlNet.UpdateEventPrx.uncheckedCast(publisherUpdate)
+        
         #####
-
-
+        
         self.shutdownOnInterrupt()
         broker.waitForShutdown()
 

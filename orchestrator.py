@@ -46,6 +46,13 @@ class OrchestratorEvent(TrawlNet.OrchestratorEvent):
             print("New Orchestrator: ", prx)
             self.serverMaster.orchList.append(prx)
             prx.announce(TrawlNet.OrchestratorPrx.checkedCast(self.orchestrator))
+            
+            publisherUpdate = self.serverMaster.topicUpdate.getPublisher()
+            orchUpdate = TrawlNet.UpdateEventPrx.uncheckedCast(publisherUpdate)
+            filesDict = self.serverMaster.files
+            fileList = self.serverMaster.dictToList(filesDict)
+            for file in fileList:
+                orchUpdate.newFile(file)
 
 
 class UpdateEvent(TrawlNet.UpdateEvent):   
@@ -93,13 +100,7 @@ class Orchestrator(TrawlNet.Orchestrator):
 
     def getFileList(self, current=None):
         fileList = self.serverMaster.files
-        retVal=[]
-        for hash, name in fileList.items():
-            file=TrawlNet.FileInfo()
-            file.hash = hash
-            file.name = name
-            retVal.append(file)
-        return retVal
+        return self.serverMaster.dictToList(fileList)
 
     def announce(self, prx, current=None):
         self.serverMaster.orchList.append(prx)
@@ -110,6 +111,7 @@ class Server(Ice.Application):
 
     files = {}
     orchList = []
+    topicUpdate = None
 
     def get_topic_manager(self):
         key = 'IceStorm.TopicManager.Proxy'
@@ -165,7 +167,6 @@ class Server(Ice.Application):
         
         orch.hello(TrawlNet.OrchestratorPrx.checkedCast(proxy))
         
-        
         ###SUBSCRIBER UPDATEFILE###
         
         updatefileServant = UpdateEvent(self)
@@ -174,19 +175,20 @@ class Server(Ice.Application):
         topic_nameUpdate = "UpdateEvents"
         qosUpdate = {}
         try:
-            topicUpdate = topic_mgr.retrieve(topic_nameUpdate)
+            self.topicUpdate = topic_mgr.retrieve(topic_nameUpdate)
         except IceStorm.NoSuchTopic:
-            topicUpdate = topic_mgr.create(topic_nameUpdate)
+            self.topicUpdate = topic_mgr.create(topic_nameUpdate)
             
-        topicUpdate.subscribeAndGetPublisher(qosUpdate, subscriberUpdate)
+        self.topicUpdate.subscribeAndGetPublisher(qosUpdate, subscriberUpdate)
         print("Waiting events2... '{}'".format(subscriberUpdate))
         
         adapter.activate()
         
         ###PUBLISHER UPDATEFILE###
         
-        publisherUpdate = topicUpdate.getPublisher()
-        self.orchUpdate = TrawlNet.UpdateEventPrx.uncheckedCast(publisherUpdate)
+        
+        
+        
         
         #####
         
@@ -196,6 +198,15 @@ class Server(Ice.Application):
         topic.unsubscribe(subscriber)
 
         return 0
+
+    def dictToList(self, dict):
+        retVal=[]
+        for hash, name in dict.items():
+            file=TrawlNet.FileInfo()
+            file.hash = hash
+            file.name = name
+            retVal.append(file)
+        return retVal
 
     def checkFile(self, url):
         ydl_opts = {}

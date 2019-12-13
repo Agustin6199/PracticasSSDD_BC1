@@ -8,9 +8,10 @@ import TrawlNet
 
 
 class Client(Ice.Application):
+    
     def run(self, argv):
         if(len(argv) != 3 and len(argv) != 2):
-                print("Error en la línea de comandos. El formato es: ./client.py <proxy> <url> ó ./client.py <proxy> ")
+                print("Error - The format is: ./client.py <proxy> <url> ó ./client.py <proxy> ")
                 return -1
 
         proxy = self.communicator().stringToProxy(argv[1])
@@ -28,9 +29,9 @@ class Client(Ice.Application):
         else:
             files = orchestrator.getFileList()
             if(len(files)==0):
-                print("No hay archivos descargados.")
+                print("There is not any downloaded file.")
             else:
-                print("Lista de archivos:")
+                print("File list:")
                 for file in files:
                     print("Name: "+ file.name + "   ID: " + file.hash)
 

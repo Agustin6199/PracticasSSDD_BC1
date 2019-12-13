@@ -24,6 +24,7 @@ class NullLogger:
     def error(self, msg):
         pass
 
+
 _YOUTUBEDL_OPTS_ = {
     'format': 'bestaudio/best',
     'postprocessors': [{
@@ -33,6 +34,7 @@ _YOUTUBEDL_OPTS_ = {
     }],
     'logger': NullLogger()
 }
+
 
 def download_mp3(url, destination='./'):
     '''
@@ -61,9 +63,8 @@ class Downloader(TrawlNet.Downloader):
         self.serverMaster = server
     
     def addDownloadTask(self, url, current=None):
-        print("Descargando tarea:", url)
+        print("Download:", url)
         fileName, fileId = download_mp3(url)
-        ##print("Nombre: " + fileName[2:len(fileName)-1] + "  ID: " + fileId)
         fileinfo = TrawlNet.FileInfo()
         fileinfo.name = fileName[2:len(fileName)-1]
         fileinfo.hash = fileId

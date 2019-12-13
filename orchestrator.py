@@ -6,7 +6,6 @@ import Ice
 Ice.loadSlice('trawlnet.ice')
 import TrawlNet
 import IceStorm
-
 try:
     import youtube_dl
 except ImportError:
@@ -34,6 +33,7 @@ _YOUTUBEDL_OPTS_ = {
     }],
     'logger': NullLogger()
 }
+
 
 class OrchestratorEvent(TrawlNet.OrchestratorEvent):
     
@@ -63,7 +63,7 @@ class UpdateEvent(TrawlNet.UpdateEvent):
     def newFile(self, nfile, current=None):
         if self.serverMaster:
             if nfile.hash not in self.serverMaster.files:
-                print("Añadido a la lista de ficheros el archivo descargado por otro orchestrator: " + nfile.name)
+                print("New file downloaded by another orchestrator: " + nfile.name)
                 self.serverMaster.files[nfile.hash] = nfile.name
 
 
@@ -75,27 +75,27 @@ class Orchestrator(TrawlNet.Orchestrator):
     def downloadTask(self, url, current=None):
         
         proxyServer = Ice.Application.communicator().stringToProxy(sys.argv[1])
-        downloader = TrawlNet.DownloaderPrx.checkedCast(proxyServer)
-        
+        downloader = TrawlNet.DownloaderPrx.checkedCast(proxyServer)        
         if not downloader:
             raise RuntimeError('Invalid proxy')
 
         try:
             inFiles, idFile = self.serverMaster.checkFile(url)
         except Exception:
-            print("Se ha producido un error en la descarga: ", url)
-            raise TrawlNet.DownloadError("URL no válida")
+            print("An error has occured with the download: ", url)
+            raise TrawlNet.DownloadError("Invalid URL")
             
         if(inFiles):
-            print("Descargando...")
+            print("Downloading...")
             fileinfo = downloader.addDownloadTask(url)
-            print("Descarga realizada con éxito.")
+            print("Succesful download: ", fileinfo.name)
             self.serverMaster.files[fileinfo.hash] = fileinfo.name
         else:
-            print("Archivo descargado previamente.")
+            print("This file already exists.")
             fileinfo = TrawlNet.FileInfo()
             fileinfo.hash = idFile
             fileinfo.name = self.serverMaster.files[idFile]
+            
         return fileinfo
 
     def getFileList(self, current=None):
@@ -145,56 +145,43 @@ class Server(Ice.Application):
             return 2
 
         ###SUBSCRIBER SYNC###
+        
         helloServant = OrchestratorEvent(self, proxy)
         subscriber = adapter.addWithUUID(helloServant)
-
         topic_name = "OrchestratorSync"
         qos = {}
         try:
             topic = topic_mgr.retrieve(topic_name)
         except IceStorm.NoSuchTopic:
             topic = topic_mgr.create(topic_name)
-
         topic.subscribeAndGetPublisher(qos, subscriber)
-        print("Waiting events... '{}'".format(subscriber))
-	
-        ##adapter.activate()
-
-        ###PUBLISHER SYNC###
-        
-        publisher = topic.getPublisher()
-        orch = TrawlNet.OrchestratorEventPrx.uncheckedCast(publisher)
-        
-        orch.hello(TrawlNet.OrchestratorPrx.checkedCast(proxy))
+        print("Waiting new events in OchestratorSync...")
         
         ###SUBSCRIBER UPDATEFILE###
         
         updatefileServant = UpdateEvent(self)
         subscriberUpdate = adapter.addWithUUID(updatefileServant)
-        
         topic_nameUpdate = "UpdateEvents"
         qosUpdate = {}
         try:
             self.topicUpdate = topic_mgr.retrieve(topic_nameUpdate)
         except IceStorm.NoSuchTopic:
             self.topicUpdate = topic_mgr.create(topic_nameUpdate)
-            
         self.topicUpdate.subscribeAndGetPublisher(qosUpdate, subscriberUpdate)
-        print("Waiting events2... '{}'".format(subscriberUpdate))
+        print("Waiting new events in UpdateEvents...")
         
         adapter.activate()
         
-        ###PUBLISHER UPDATEFILE###
+        ###PUBLISHER SYNC###
         
-        
-        
-        
+        publisher = topic.getPublisher()
+        orch = TrawlNet.OrchestratorEventPrx.uncheckedCast(publisher)
+        orch.hello(TrawlNet.OrchestratorPrx.checkedCast(proxy))
         
         #####
         
         self.shutdownOnInterrupt()
         broker.waitForShutdown()
-
         topic.unsubscribe(subscriber)
 
         return 0

@@ -105,6 +105,10 @@ class Orchestrator(TrawlNet.Orchestrator):
     def announce(self, prx, current=None):
         self.serverMaster.orchList.append(prx)
         print('Previous Orchestrator: ', prx)
+
+    def getFile(self, fileName):
+        ##transfer = self.transferFactory.create(fileName)
+        ##return TrawlNet.TransferPrx.checkedCast(transfer)
         
 
 class Server(Ice.Application):

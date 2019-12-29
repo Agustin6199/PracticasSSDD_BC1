@@ -9,25 +9,31 @@ import TrawlNet
 
 class Client(Ice.Application):
     
+    orchestrator = None 
+
     def run(self, argv):
         if(len(argv) != 3 and len(argv) != 2):
                 print("Error - The format is: ./client.py <proxy> <url> ó ./client.py <proxy> ")
                 return -1
 
         proxy = self.communicator().stringToProxy(argv[1])
-        orchestrator = TrawlNet.OrchestratorPrx.checkedCast(proxy)
+        self.orchestrator = TrawlNet.OrchestratorPrx.checkedCast(proxy)
 
-        if not orchestrator:
+        if not self.orchestrator:
             raise RuntimeError('Invalid proxy')
 
         if(len(argv[2]) > 0):
-            try:
-                fileInfoBack = orchestrator.downloadTask(argv[2])
-                print("Name: "+ fileInfoBack.name + "   ID: " + fileInfoBack.hash)
-            except TrawlNet.DownloadError as e:
-                print(e.reason)
+            if(argv[2].find("www.") or argv[2].find("https://")):
+                try:
+                    fileInfoBack = self.orchestrator.downloadTask(argv[2])
+                    print("Name: "+ fileInfoBack.name + "   ID: " + fileInfoBack.hash)
+                except TrawlNet.DownloadError as e:
+                    print(e.reason)
+            else:
+                transfer_request(argv[2])
+                
         else:
-            files = orchestrator.getFileList()
+            files = self.orchestrator.getFileList()
             if(len(files)==0):
                 print("There is not any downloaded file.")
             else:
@@ -36,6 +42,34 @@ class Client(Ice.Application):
                     print("Name: "+ file.name + "   ID: " + file.hash)
 
         return 0
+
+# Use this function to receive data in the client side.
+# ------------------------------------------------------
+    def transfer_request(self, file_name):
+        remote_EOF = False
+        BLOCK_SIZE = 1024
+        transfer = None
+
+        try:
+            transfer = self.orchestrator.getFile(file_name)
+        except TrawlNet.TransferError as e:
+            print(e.reason)
+            return 1
+
+        with open(os.path.join(DOWNLOADS_DIRECTORY, file_name), 'wb') as file_:
+            remote_EOF = False
+            while not remote_EOF:
+                data = transfer.recv(BLOCK_SIZE)
+                if len(data) > 1:
+                    data = data[1:]
+                data = binascii.a2b_base64(data)
+                remote_EOF = len(data) < BLOCK_SIZE
+                if data:
+                    file_.write(data)
+            transfer.close()
+
+        transfer.destroy()
+        print('Transfer finished!')
 
 
 sys.exit(Client().main(sys.argv))

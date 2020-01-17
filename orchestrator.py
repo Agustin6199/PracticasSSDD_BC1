@@ -68,13 +68,13 @@ class UpdateEvent(TrawlNet.UpdateEvent):
 
 
 class Orchestrator(TrawlNet.Orchestrator):
-
+    
     def __init__(self, server):
         self.serverMaster = server
         self.proxyServer = Ice.Application.communicator().stringToProxy(sys.argv[1])
     
     def downloadTask(self, url, current=None):
-
+        
         downloaderFactory = TrawlNet.DownloaderFactoryPrx.checkedCast(self.proxyServer)
         downloader = downloaderFactory.create()
 

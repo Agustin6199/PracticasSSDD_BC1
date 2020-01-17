@@ -100,7 +100,8 @@ class DownloaderFactoryI(TrawlNet.DownloaderFactory):
     def create(self, current):
         servant = Downloader(self.serverMaster)
         proxy = current.adapter.addWithUUID(servant)
-        print('# New downloader for {} #'.format(file_path), flush=True)
+        ##print('# New downloader for {} #'.format(file_path), flush=True)
+        print("New downloader")
         
         return TrawlNet.DownloaderPrx.checkedCast(proxy)
 
@@ -145,16 +146,17 @@ class Server(Ice.Application):
         broker = self.communicator()
         properties = broker.getProperties()
 
-        servant = DownloaderFactoryI(self)
+        servantDownloader = DownloaderFactoryI(self)
         servantTransfer = TransferFactoryI()
 
         adapter = broker.createObjectAdapter("ServerAdapter")
         factory_id = properties.getProperty('TransferFactoryIdentity')
-        proxy = adapter.addWithUUID(servant)
-        proxy = adapter.add(servantTransfer, broker.stringToIdentity(factory_id))
-
+        downloader_id = properties.getProperty('DownloaderFactoryIdentity')
+        proxyTransfer = adapter.add(servantTransfer, broker.stringToIdentity(factory_id))
+        proxyDownloader = adapter.add(servantDownloader, broker.stringToIdentity(downloader_id))
         
-        print(proxy, flush=True)
+        print(proxyDownloader, flush=True)
+        print(proxyTransfer, flush=True)
         
         topic_mgr = self.get_topic_manager()
         if not topic_mgr:

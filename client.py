@@ -5,7 +5,10 @@ import sys
 import Ice
 Ice.loadSlice('trawlnet.ice')
 import TrawlNet
+import os
+import binascii
 
+DOWNLOADS_DIRECTORY="./downloads"
 
 class Client(Ice.Application):
     

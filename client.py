@@ -11,40 +11,6 @@ class Client(Ice.Application):
     
     orchestrator = None 
 
-    def run(self, argv):
-        if(len(argv) != 3 and len(argv) != 2):
-                print("Error - The format is: ./client.py <proxy> <url> ó ./client.py <proxy> ")
-                return -1
-
-        proxy = self.communicator().stringToProxy(argv[1])
-        self.orchestrator = TrawlNet.OrchestratorPrx.checkedCast(proxy)
-
-        if not self.orchestrator:
-            raise RuntimeError('Invalid proxy')
-
-        if(len(argv[2]) > 0):
-            if(argv[2].find("www.") or argv[2].find("https://")):
-                try:
-                    fileInfoBack = self.orchestrator.downloadTask(argv[2])
-                    print("Name: "+ fileInfoBack.name + "   ID: " + fileInfoBack.hash)
-                except TrawlNet.DownloadError as e:
-                    print(e.reason)
-            else:
-                transfer_request(argv[2])
-                
-        else:
-            files = self.orchestrator.getFileList()
-            if(len(files)==0):
-                print("There is not any downloaded file.")
-            else:
-                print("File list:")
-                for file in files:
-                    print("Name: "+ file.name + "   ID: " + file.hash)
-
-        return 0
-
-# Use this function to receive data in the client side.
-# ------------------------------------------------------
     def transfer_request(self, file_name):
         remote_EOF = False
         BLOCK_SIZE = 1024
@@ -70,6 +36,38 @@ class Client(Ice.Application):
 
         transfer.destroy()
         print('Transfer finished!')
+
+    def run(self, argv):
+        if(len(argv) != 3 and len(argv) != 2):
+                print("Error - The format is: ./client.py <proxy> <url> ó ./client.py <proxy> ")
+                return -1
+
+        proxy = self.communicator().stringToProxy(argv[1])
+        self.orchestrator = TrawlNet.OrchestratorPrx.checkedCast(proxy)
+
+        if not self.orchestrator:
+            raise RuntimeError('Invalid proxy')
+
+        if(len(argv[2]) > 0):
+            if(argv[2].find("www.")!=-1 or argv[2].find("https://")!=-1):
+                try:
+                    fileInfoBack = self.orchestrator.downloadTask(argv[2])
+                    print("Name: "+ fileInfoBack.name + "   ID: " + fileInfoBack.hash)
+                except TrawlNet.DownloadError as e:
+                    print(e.reason)
+            else:
+                self.transfer_request(argv[2])
+                
+        else:
+            files = self.orchestrator.getFileList()
+            if(len(files)==0):
+                print("There is not any downloaded file.")
+            else:
+                print("File list:")
+                for file in files:
+                    print("Name: "+ file.name + "   ID: " + file.hash)
+
+        return 0
 
 
 sys.exit(Client().main(sys.argv))

@@ -71,11 +71,13 @@ class Orchestrator(TrawlNet.Orchestrator):
 
     def __init__(self, server):
         self.serverMaster = server
+        self.proxyServer = Ice.Application.communicator().stringToProxy(sys.argv[1])
     
     def downloadTask(self, url, current=None):
-        
-        proxyServer = Ice.Application.communicator().stringToProxy(sys.argv[1])
-        downloader = TrawlNet.DownloaderPrx.checkedCast(proxyServer)        
+
+        downloaderFactory = TrawlNet.DownloaderFactoryPrx.checkedCast(self.proxyServer)
+        downloader = downloaderFactory.create()
+
         if not downloader:
             raise RuntimeError('Invalid proxy')
 
@@ -96,6 +98,8 @@ class Orchestrator(TrawlNet.Orchestrator):
             fileinfo.hash = idFile
             fileinfo.name = self.serverMaster.files[idFile]
             
+        downloader.destroy()
+
         return fileinfo
 
     def getFileList(self, current=None):
@@ -106,9 +110,10 @@ class Orchestrator(TrawlNet.Orchestrator):
         self.serverMaster.orchList.append(prx)
         print('Previous Orchestrator: ', prx)
 
-    def getFile(self, fileName):
-        ##transfer = self.transferFactory.create(fileName)
-        ##return TrawlNet.TransferPrx.checkedCast(transfer)
+    def getFile(self, fileName, current=None):
+        factory = TrawlNet.TransferFactoryPrx.checkedCast(self.proxyServer)        
+        transfer = factory.create(fileName)
+        return TrawlNet.TransferPrx.checkedCast(transfer)
         
 
 class Server(Ice.Application):

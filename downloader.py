@@ -1,9 +1,13 @@
 #!/usr/bin/python3
 # -*- coding:utf-8; mode:python -*-
 
-import sys
-import Ice
 import os
+import sys
+import binascii
+
+import Ice
+import IceGrid
+
 Ice.loadSlice('trawlnet.ice')
 import TrawlNet
 try:
@@ -12,6 +16,9 @@ except ImportError:
     print('ERROR: do you have installed youtube-dl library?')
     sys.exit(1)
 import IceStorm
+
+APP_DIRECTORY = './'
+DOWNLOADS_DIRECTORY = os.path.join(APP_DIRECTORY, 'downloads')
 
 
 class NullLogger:
@@ -57,6 +64,47 @@ def download_mp3(url, destination='./'):
     return filename, meta['id']
 
 
+class TransferI(TrawlNet.Transfer):
+    def __init__(self, file_path):
+        self.file_ = open(file_path, 'rb')
+
+    def recv(self, size, current):
+        return str(binascii.b2a_base64(self.file_.read(size), newline=False))
+
+    def close(self, current):
+        self.file_.close()
+
+    def destroy(self, current):
+        try:
+            current.adapter.remove(current.id)
+            print('TRANSFER DESTROYED', flush=True)
+        except Exception as e:
+            print(e, flush=True)
+
+
+class TransferFactoryI(TrawlNet.TransferFactory):
+    def create(self, file_name, current):
+        file_path = os.path.join(DOWNLOADS_DIRECTORY, file_name)
+        servant = TransferI(file_path)
+        proxy = current.adapter.addWithUUID(servant)
+        print('# New transfer for {} #'.format(file_path), flush=True)
+
+        return TrawlNet.TransferPrx.checkedCast(proxy)
+
+
+class DownloaderFactoryI(TrawlNet.DownloaderFactory):
+
+    def __init__(self, server):
+        self.serverMaster = server
+
+    def create(self, current):
+        servant = Downloader(self.serverMaster)
+        proxy = current.adapter.addWithUUID(servant)
+        print('# New downloader for {} #'.format(file_path), flush=True)
+        
+        return TrawlNet.DownloaderPrx.checkedCast(proxy)
+
+
 class Downloader(TrawlNet.Downloader):
     
     def __init__(self, server):
@@ -71,6 +119,13 @@ class Downloader(TrawlNet.Downloader):
         orch = TrawlNet.UpdateEventPrx.uncheckedCast(self.serverMaster.publisher)
         orch.newFile(fileinfo)
         return fileinfo
+
+    def destroy(self, current):
+        try:
+            current.adapter.remove(current.id)
+            print('DOWNLOADER DESTROYED', flush=True)
+        except Exception as e:
+            print(e, flush=True)
         
         
 class Server(Ice.Application):
@@ -88,10 +143,16 @@ class Server(Ice.Application):
     
     def run(self, argv):
         broker = self.communicator()
-        servant = Downloader(self)
-        
+        properties = broker.getProperties()
+
+        servant = DownloaderFactoryI(self)
+        servantTransfer = TransferFactoryI()
+
         adapter = broker.createObjectAdapter("ServerAdapter")
-        proxy = adapter.add(servant, broker.stringToIdentity("downloader1"))
+        factory_id = properties.getProperty('TransferFactoryIdentity')
+        proxy = adapter.addWithUUID(servant)
+        proxy = adapter.add(servantTransfer, broker.stringToIdentity(factory_id))
+
         
         print(proxy, flush=True)
         

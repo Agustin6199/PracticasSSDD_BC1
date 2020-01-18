@@ -8,7 +8,7 @@ import TrawlNet
 import os
 import binascii
 
-DOWNLOADS_DIRECTORY="./downloads"
+DOWNLOADS_DIRECTORY="./"
 
 class Client(Ice.Application):
     

@@ -10,12 +10,14 @@ import IceGrid
 
 Ice.loadSlice('trawlnet.ice')
 import TrawlNet
+
 try:
     import youtube_dl
 except ImportError:
     print('ERROR: do you have installed youtube-dl library?')
     sys.exit(1)
 import IceStorm
+
 
 APP_DIRECTORY = './'
 DOWNLOADS_DIRECTORY = os.path.join(APP_DIRECTORY, 'downloads')
@@ -43,7 +45,7 @@ _YOUTUBEDL_OPTS_ = {
 }
 
 
-def download_mp3(url, destination='./'):
+def download_mp3(url, destination=DOWNLOADS_DIRECTORY):
     '''
     Synchronous download from YouTube
     '''
@@ -59,37 +61,9 @@ def download_mp3(url, destination='./'):
         meta = youtube.extract_info(url, download=False)
     filename = task_status['filename']
     # BUG: filename extension is wrong, it must be mp3
-    filename = filename[:filename.rindex('.') + 1]
+    filename = filename[filename.rindex('/') - 1:filename.rindex('.') + 1]
  
     return filename, meta['id']
-
-
-class TransferI(TrawlNet.Transfer):
-    def __init__(self, file_path):
-        self.file_ = open(file_path, 'rb')
-
-    def recv(self, size, current):
-        return str(binascii.b2a_base64(self.file_.read(size), newline=False))
-
-    def close(self, current):
-        self.file_.close()
-
-    def destroy(self, current):
-        try:
-            current.adapter.remove(current.id)
-            print('TRANSFER DESTROYED', flush=True)
-        except Exception as e:
-            print(e, flush=True)
-
-
-class TransferFactoryI(TrawlNet.TransferFactory):
-    def create(self, file_name, current):
-        file_path = os.path.join(DOWNLOADS_DIRECTORY, file_name)
-        servant = TransferI(file_path)
-        proxy = current.adapter.addWithUUID(servant)
-        print('# New transfer for {} #'.format(file_path), flush=True)
-
-        return TrawlNet.TransferPrx.checkedCast(proxy)
 
 
 class DownloaderFactoryI(TrawlNet.DownloaderFactory):
@@ -98,15 +72,14 @@ class DownloaderFactoryI(TrawlNet.DownloaderFactory):
         self.serverMaster = server
 
     def create(self, current):
-        servant = Downloader(self.serverMaster)
+        servant = DownloaderI(self.serverMaster)
         proxy = current.adapter.addWithUUID(servant)
-        ##print('# New downloader for {} #'.format(file_path), flush=True)
-        print("New downloader")
+        print('# New downloader #', flush=True)
         
         return TrawlNet.DownloaderPrx.checkedCast(proxy)
 
 
-class Downloader(TrawlNet.Downloader):
+class DownloaderI(TrawlNet.Downloader):
     
     def __init__(self, server):
         self.serverMaster = server
@@ -147,16 +120,12 @@ class Server(Ice.Application):
         properties = broker.getProperties()
 
         servantDownloader = DownloaderFactoryI(self)
-        servantTransfer = TransferFactoryI()
 
         adapter = broker.createObjectAdapter("ServerAdapter")
-        factory_id = properties.getProperty('TransferFactoryIdentity')
         downloader_id = properties.getProperty('DownloaderFactoryIdentity')
-        proxyTransfer = adapter.add(servantTransfer, broker.stringToIdentity(factory_id))
-        proxyDownloader = adapter.add(servantDownloader, broker.stringToIdentity(downloader_id))
+        proxy = adapter.add(servantDownloader, broker.stringToIdentity(downloader_id))
         
-        print(proxyDownloader, flush=True)
-        print(proxyTransfer, flush=True)
+        print(proxy, flush=True)
         
         topic_mgr = self.get_topic_manager()
         if not topic_mgr:

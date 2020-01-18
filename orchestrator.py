@@ -140,7 +140,7 @@ class Server(Ice.Application):
         broker = self.communicator()
         servant = Orchestrator(self)
 
-        adapter = broker.createObjectAdapter("ServerAdapter")
+        adapter = broker.createObjectAdapter('ServerAdapter')
         proxy = adapter.add(servant, broker.stringToIdentity("orchestrator1"))
 
         self.orchList.append(proxy)

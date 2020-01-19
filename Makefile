@@ -22,7 +22,7 @@ run-client-transfer:
 	./client.py "orchestrator" --transfer "Better Jungler Wins"
 
 run-client-list:
-	./client.py "orchestrator"
+	./client.py "orchestrator" --Ice.Config=client.config
 
 run-registry-node: /tmp/db/registry /tmp/db/registry-node/servers 
 	icegridnode --Ice.Config=registry-node.config

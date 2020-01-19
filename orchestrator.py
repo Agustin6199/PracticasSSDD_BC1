@@ -71,11 +71,11 @@ class Orchestrator(TrawlNet.Orchestrator):
     
     def __init__(self, server):
         self.serverMaster = server
-        self.proxyServer = Ice.Application.communicator().stringToProxy(sys.argv[1])
     
     def downloadTask(self, url, current=None):
         
-        downloaderFactory = TrawlNet.DownloaderFactoryPrx.checkedCast(self.proxyServer)
+        proxyServer = Ice.Application.communicator().stringToProxy('downloader_factory')
+        downloaderFactory = TrawlNet.DownloaderFactoryPrx.checkedCast(proxyServer)
         downloader = downloaderFactory.create()
 
         if not downloader:
@@ -111,7 +111,8 @@ class Orchestrator(TrawlNet.Orchestrator):
         print('Previous Orchestrator: ', prx)
 
     def getFile(self, fileName, current=None):
-        factory = TrawlNet.TransferFactoryPrx.checkedCast(self.proxyServer)        
+        proxyServer = Ice.Application.communicator().stringToProxy('transfer_factory')
+        factory = TrawlNet.TransferFactoryPrx.checkedCast(proxyServer)        
         transfer = factory.create(fileName)
         return TrawlNet.TransferPrx.checkedCast(transfer)
         
@@ -133,15 +134,18 @@ class Server(Ice.Application):
         return IceStorm.TopicManagerPrx.checkedCast(pr)
 
     def run(self, argv):
-        if(len(sys.argv) != 2):
-            print("Error en la línea de comandos. El formato es: ./orchestrator.py --Ice.Config=Orchestrator.config <proxyServer>")
+        if(len(sys.argv) != 1):
+            print("Error en la línea de comandos. El formato es: ./orchestrator.py --Ice.Config=orchestrator-node.config")
             return -1
 
         broker = self.communicator()
-        servant = Orchestrator(self)
+        properties = broker.getProperties()
+        servant = Orchestrator(properties.getProperty('Ice.ProgramName'))
 
         adapter = broker.createObjectAdapter('ServerAdapter')
-        proxy = adapter.add(servant, broker.stringToIdentity("orchestrator1"))
+        indirect_proxy = adapter.addWithUUID(servant)
+        identity_ = indirect_proxy.ice_getIdentity()
+        proxy = adapter.createDirectProxy(identity_)
 
         self.orchList.append(proxy)
         print(proxy, flush=True)
@@ -156,7 +160,9 @@ class Server(Ice.Application):
         ###SUBSCRIBER SYNC###
         
         helloServant = OrchestratorEvent(self, proxy)
-        subscriber = adapter.addWithUUID(helloServant)
+        indirect_subscriber = adapter.addWithUUID(helloServant)
+        object_identity = indirect_subscriber.ice_getIdentity()
+        subscriber = adapter.createDirectProxy(object_identity)
         topic_name = "OrchestratorSync"
         qos = {}
         try:
@@ -169,7 +175,9 @@ class Server(Ice.Application):
         ###SUBSCRIBER UPDATEFILE###
         
         updatefileServant = UpdateEvent(self)
-        subscriberUpdate = adapter.addWithUUID(updatefileServant)
+        indirect_subscriberUpdate = adapter.addWithUUID(updatefileServant)
+        object_identityUpdate = indirect_subscriberUpdate.ice_getIdentity()
+        subscriberUpdate = adapter.createDirectProxy(object_identityUpdate)
         topic_nameUpdate = "UpdateEvents"
         qosUpdate = {}
         try:

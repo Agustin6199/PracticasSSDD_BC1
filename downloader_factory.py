@@ -121,8 +121,8 @@ class Server(Ice.Application):
 
         servantDownloader = DownloaderFactoryI(self)
 
-        adapter = broker.createObjectAdapter("ServerAdapter")
-        downloader_id = properties.getProperty('DownloaderFactoryIdentity')
+        adapter = broker.createObjectAdapter('ServerAdapter')
+        downloader_id = properties.getProperty('Identity')
         proxy = adapter.add(servantDownloader, broker.stringToIdentity(downloader_id))
         
         print(proxy, flush=True)

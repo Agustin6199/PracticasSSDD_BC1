@@ -16,13 +16,13 @@ run: clean
 	$(MAKE) run-orchestrator-node
 
 run-client-download:
-        ./client.py "orchestrator" --download "www.youtube.com"
+	./client.py "orchestrator" --download "www.youtube.com"
 
 run-client-transfer:
-        ./client.py "orchestrator" --transfer "Better Jungler Wins"
+	./client.py "orchestrator" --transfer "Better Jungler Wins"
 
 run-client-list:
-        ./client.py "orchestrator"
+	./client.py "orchestrator"
 
 run-registry-node: /tmp/db/registry /tmp/db/registry-node/servers 
 	icegridnode --Ice.Config=registry-node.config
@@ -35,7 +35,7 @@ run-downloads-node: /tmp/db/downloads-node/servers
 
 app-workspace: /tmp/YoutubeDownloaderApp
 	cp trawlnet.ice orchestrator.py downloader_factory.py \
-	transfer_factory.py utils.py /tmp/YoutubeDownloaderApp
+	transfer_factory.py /tmp/YoutubeDownloaderApp
 	icepatch2calc /tmp/YoutubeDownloaderApp
 
 /tmp/%:

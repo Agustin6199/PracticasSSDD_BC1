@@ -16,13 +16,13 @@ run: clean
 	$(MAKE) run-orchestrator-node
 
 run-client-download:
-	echo "Añade la ejecución del cliente para realizar una descarga"
+        ./client.py "orchestrator" --download "www.youtube.com"
 
 run-client-transfer:
-	echo "Añade la ejecución del cliente para realizar una transferencia"
+        ./client.py "orchestrator" --transfer "Better Jungler Wins"
 
 run-client-list:
-	echo "Añade la ejecución del cliente para obtener la lista de canciones"
+        ./client.py "orchestrator"
 
 run-registry-node: /tmp/db/registry /tmp/db/registry-node/servers 
 	icegridnode --Ice.Config=registry-node.config

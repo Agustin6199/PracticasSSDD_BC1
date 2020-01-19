@@ -41,8 +41,8 @@ class Client(Ice.Application):
         print('Transfer finished!')
 
     def run(self, argv):
-        if(len(argv) != 3 and len(argv) != 2):
-                print("Error - The format is: ./client.py <proxy> <url> ó ./client.py <proxy> ")
+        if(len(argv) != 4 and len(argv) != 2):
+                print("Error - The format is: ./client.py <proxy> --opt(download or transfer) <url> ó ./client.py <proxy> ")
                 return -1
 
         proxy = self.communicator().stringToProxy(argv[1])
@@ -51,15 +51,17 @@ class Client(Ice.Application):
         if not self.orchestrator:
             raise RuntimeError('Invalid proxy')
 
-        if(len(argv[2]) > 0):
-            if(argv[2].find("www.")!=-1 or argv[2].find("https://")!=-1):
+        if(len(argv) > 2):
+            if(argv[2] == "--download"):
                 try:
                     fileInfoBack = self.orchestrator.downloadTask(argv[2])
                     print("Name: "+ fileInfoBack.name + "   ID: " + fileInfoBack.hash)
                 except TrawlNet.DownloadError as e:
                     print(e.reason)
-            else:
+            elif(argv[2] == "--transfer"):
                 self.transfer_request(argv[2])
+            else:
+                print("Error - The format is: ./client.py <proxy> --opt(download or transfer) <url> ó ./client.py <proxy> ")
                 
         else:
             files = self.orchestrator.getFileList()

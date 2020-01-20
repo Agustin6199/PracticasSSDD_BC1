@@ -142,7 +142,7 @@ class Server(Ice.Application):
         properties = broker.getProperties()
         servant = Orchestrator(properties.getProperty('Ice.ProgramName'))
 
-        adapter = broker.createObjectAdapter('ServerAdapter')
+        adapter = broker.createObjectAdapter('OrchestratorAdapter')
         indirect_proxy = adapter.addWithUUID(servant)
         identity_ = indirect_proxy.ice_getIdentity()
         proxy = adapter.createDirectProxy(identity_)

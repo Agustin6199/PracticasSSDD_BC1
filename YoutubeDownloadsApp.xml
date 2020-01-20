@@ -47,7 +47,7 @@
                <property name="Ice.StdOut" value="${application.distrib}/downloader-out.txt"/>
                <property name="Ice.ProgramName" value="${server}.DownloaderFactory"/>
             </properties>
-            <adapter name="ServerAdapter" endpoints="tcp" id="${server}.ServerAdapter">
+            <adapter name="DonwloaderAdapter" endpoints="tcp" id="${server}.DonwloaderAdapter">
                <object identity="downloader_factory" type="::TrawlNet::DownloaderFactory" property="Identity"/>
             </adapter>
          </server>
@@ -106,12 +106,13 @@
          <parameter name="index"/>
          <server id="OrchestratorServer${index}" activation="on-demand" exe="./orchestrator.py" pwd="${application.distrib}">
             <properties>
-               <property name="Ice.StdOut" value="${application.distrib}/orchestrator-out.txt"/>
+               <property name="Ice.StdOut" value="${application.distrib}/orchestrator${index}-out.txt"/>
                <property name="Ice.ProgramName" value="${server}.Orchestrator${index}"/>
                <property name="DownloaderFactoryIdentity" value="downloaderidentity"/>
                <property name="TransferFactoryIdentity" value="transferidentity"/>
+               <property name="Ice.StdErr" value="${application.distrib}/orchestrator${index}-err.txt"/>
             </properties>
-            <adapter name="ServerAdapter" endpoints="tcp" id="${server}.ServerAdapter" replica-group="OrchestratorReplicaGroup">
+            <adapter name="OrchestratorAdapter" endpoints="tcp" id="${server}.OrchestratorAdapter" replica-group="OrchestratorReplicaGroup">
                <object identity="orchestrator${index}" type="::TrawlNet::Orchestrator" property="Identity"/>
             </adapter>
          </server>
@@ -129,7 +130,7 @@
       </server-template>
       <replica-group id="OrchestratorReplicaGroup">
          <load-balancing type="random" n-replicas="0"/>
-         <object identity="orchestrator" type="::Example::Orchestrator"/>
+         <object identity="orchestrator" type="::TrawlNet::Orchestrator"/>
       </replica-group>
       <node name="downloads-node">
          <server-instance template="DownloaderFactoryTemplate"/>

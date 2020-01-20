@@ -16,10 +16,10 @@ run: clean
 	$(MAKE) run-orchestrator-node
 
 run-client-download:
-	./client.py "orchestrator" --download "www.youtube.com"
+	./client.py "orchestrator" --download "https://www.youtube.com/watch?v=8nBFqZppIF0" --Ice.Config=client.config
 
 run-client-transfer:
-	./client.py "orchestrator" --transfer "Better Jungler Wins"
+	./client.py "orchestrator" --transfer "Halsey - You should be sad.mp3" --Ice.Config=client.config
 
 run-client-list:
 	./client.py "orchestrator" --Ice.Config=client.config

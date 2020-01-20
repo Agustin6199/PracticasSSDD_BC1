@@ -129,7 +129,6 @@ class Server(Ice.Application):
         if pr is None:
             print("property {} not set".format(key))
             return None
-
         print("Using IceStorm in: '%s'" % key)
         return IceStorm.TopicManagerPrx.checkedCast(pr)
 

@@ -108,9 +108,10 @@
             <properties>
                <property name="Ice.StdOut" value="${application.distrib}/orchestrator${index}-out.txt"/>
                <property name="Ice.ProgramName" value="${server}.Orchestrator${index}"/>
-               <property name="DownloaderFactoryIdentity" value="downloaderidentity"/>
-               <property name="TransferFactoryIdentity" value="transferidentity"/>
+               <property name="DownloaderFactoryIdentity" value="downloader_factory"/>
+               <property name="TransferFactoryIdentity" value="transfer_factory"/>
                <property name="Ice.StdErr" value="${application.distrib}/orchestrator${index}-err.txt"/>
+               <property name="Identity" value="orchestrator"/>
             </properties>
             <adapter name="OrchestratorAdapter" endpoints="tcp" id="${server}.OrchestratorAdapter" replica-group="OrchestratorReplicaGroup">
                <object identity="orchestrator${index}" type="::TrawlNet::Orchestrator" property="Identity"/>

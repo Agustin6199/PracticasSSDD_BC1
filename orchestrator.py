@@ -125,7 +125,7 @@ class Server(Ice.Application):
 
     def get_topic_manager(self):
         key = 'IceStorm.TopicManager.Proxy'
-        pr = self.communicator().propertyToProxy(key)
+        pr = self.communicator().stringToProxy('YoutubeDownloadsApp.IceStorm/TopicManager')
         if pr is None:
             print("property {} not set".format(key))
             return None
@@ -140,7 +140,7 @@ class Server(Ice.Application):
 
         broker = self.communicator()
         properties = broker.getProperties()
-        servant = Orchestrator(properties.getProperty('Ice.ProgramName'))
+        servant = Orchestrator(self)
 
         adapter = broker.createObjectAdapter('OrchestratorAdapter')
         indirect_proxy = adapter.addWithUUID(servant)
